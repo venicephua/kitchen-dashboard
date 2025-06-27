@@ -1,6 +1,6 @@
 type Order = {
   id: number;
-  items: Item[];
+  items: Item;
   status: "Pending" | "Received" | "Completed";
   isCompleted: boolean; 
 };
@@ -12,7 +12,7 @@ type Item = {
 
 const orders: Order[] = [];
 
-export function createOrder(items: Item[]): Order {
+export function createOrder(items: Item): Order {
   const newOrder: Order = {
     id: orders.length + 1,
     items,
@@ -27,12 +27,17 @@ export function getOrders(): Order[] | undefined {
   return orders.length > 0 ? orders : undefined;
 }
 
-export function updateOrder(orderId: number) {
+export function updateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed"): string {
     const order = orders.find(o => o.id === orderId);
-    if (order && order.status === "Pending") {
-        order.status = "Received";
-    } else if (order && order.status === "Received") {
-        order.status = "Completed";
+    if (order) {
+      order.status = orderStatus;
+      if (orderStatus === 'Completed') {
         order.isCompleted = true;
+      }
+      else {
+        order.isCompleted = false;
+      }
+      return orderStatus;
     }
+    return `Order ${orderId} not found`;
 }

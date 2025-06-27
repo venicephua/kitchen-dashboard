@@ -1,22 +1,28 @@
 import express from "express";
 import cors from "cors";
 import { createOrder, getOrders, updateOrder } from "./orders";
+import amqp from "amqplib";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const amqp = require("amqplib");
-const RABBITMQ_URL = "amqp://localhost";
+const RABBITMQ_URL = "amqp://192.168.6.159"; 
+let channel: amqp.Channel;
 
-let channel;
-
-async function connectToRabbitMQ(orderId: number) {
+async function connectToRabbitMQ() {
   try {
     const connection = await amqp.connect(RABBITMQ_URL);
     channel = await connection.createChannel();
-    console.log("Connected to RabbitMQ");
-    await channel.assertQueue("orderStatus", { durable: true });
+    
+    const receiveQueue = "orders";
+    await channel.assertQueue(receiveQueue, { durable: false });
+    console.log(`Waiting for messages in queue: ${receiveQueue}`);
+
+    const sendQueue = "orderStatus";
+    await channel.assertQueue(sendQueue, { durable: false });
+    console.log(`Connected to send queue: ${sendQueue}`);
+
   } catch (error) {
     console.error("Failed to connect to RabbitMQ:", error);
     throw error;
@@ -31,22 +37,39 @@ app.post("/orders", (req, res) => {
   res.status(201).json({ message: "Order created successfully", order });
 });
 
+async function startOrderConsumer() {
+    channel.consume('orders', async (msg) => {
+    if (msg !== null) {
+      const order = JSON.parse(msg.content.toString());
+      createOrder(order);
+      console.log("Order received and created:", order);
+      channel.ack(msg);
+    } else {
+      console.log("No message received");
+    }
+  }); 
+}
+
+connectToRabbitMQ().then(startOrderConsumer).catch(console.error);
+
 app.get("/orders", (req, res) => {
   const orders = getOrders();
   if (orders) {
-    console.log("Orders retrieved:", JSON.stringify(orders, null, 2));
     res.status(200).json(orders);
   } else {
-    console.log("No orders found");
     res.status(404).json({ message: "No orders found" });
   }
 });
 
 app.patch("/orders/:id/update", (req, res) => {
   const orderId = parseInt(req.params.id, 10);
-  updateOrder(orderId);
+  const orderStatus = req.body.status;
+  const statusMsg = updateOrder(orderId, orderStatus);
   
-  res.json({ message: `Order ${orderId} received successfully` });
+  const statusUpdate = { orderId, status: statusMsg };
+  channel.sendToQueue("orderStatus", Buffer.from(JSON.stringify(statusUpdate)));
+
+  res.json({ message: `Order ${orderId} status updated successfully` });
 });
 
 app.listen(3001, () => {
