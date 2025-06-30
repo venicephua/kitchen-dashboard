@@ -30,7 +30,7 @@ A real-time kitchen order management system built with Svelte frontend and Node.
 ### Frontend (Svelte + TypeScript)
 - **Framework**: SvelteKit with TypeScript
 - **Features**: Auto-polling, smooth transitions, responsive layout
-- **Port**: 5173 (development)
+- **Port**: 3001
 
 ### Backend (Node.js + Express)
 - **Framework**: Express.js with TypeScript
@@ -48,14 +48,49 @@ cd kitchen-dashboard
 
 # Start all services with Docker Compose
 docker-compose up --build
-
-# Access the applications
-# - Frontend: http://localhost:3001
-# - Backend: http://localhost:3000  
-# - RabbitMQ UI: http://localhost:15672 (guest/guest)
 ```
 
 ### Option 2: Manual Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd kitchen-dashboard
+
+# Start frontend (runs on port 3001)
+cd frontend
+npm install
+npm run dev
+
+# Start backend (runs on port 3000)
+cd ../backend
+npm install
+npm start
+```
+
+## 🔗 RabbitMQ Configuration
+
+This application requires a RabbitMQ server to handle order messaging. 
+
+### External RabbitMQ Server (Current Set Up)
+Have RabbitMQ running on another machine (e.g., another laptop):
+
+```bash
+# Set the RabbitMQ connection URL
+set RABBITMQ_URL=amqp://username:password@your-rabbitmq-host:5672
+
+# Then start the application
+docker-compose up
+```
+
+## 🌐 Access Points
+
+```bash
+# Application URLs
+Frontend:    http://localhost:3001
+Backend API: http://localhost:3000
+RabbitMQ UI: http://your-rabbitmq-host:15672 (default: guest/guest)
+```
+
 
 ### Message Queues
 - **Incoming Orders**: `orders` queue - receives new orders
