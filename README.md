@@ -1,6 +1,6 @@
 # Kitchen Dashboard 🍽️
 
-A real-time kitchen order management system built with Svelte frontend and Node.js backend, featuring RabbitMQ integration for order processing.
+A real-time kitchen order management system built with Svelte frontend and Node.js backend, featuring RabbitMQ integration for order processing. Part 2 of a two-part application for an Ordering and Order Management system. 
 
 ## 🚀 Features
 
@@ -10,6 +10,20 @@ A real-time kitchen order management system built with Svelte frontend and Node.
 - **Responsive UI**: Modern, clean interface with smooth animations
 - **Auto-refresh**: Orders update automatically every 2 seconds
 - **Order Processing**: Process and complete orders with one-click buttons
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **SvelteKit** - Modern web framework
+- **TypeScript** - Type-safe JavaScript
+
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web application framework
+- **TypeScript** - Type-safe JavaScript
+
+### Message Queue
+- **RabbitMQ** - Message broker for order processing
 
 ## 🏗️ Architecture
 
@@ -27,7 +41,3 @@ A real-time kitchen order management system built with Svelte frontend and Node.
 ### Message Queues
 - **Incoming Orders**: `orders` queue - receives new orders
 - **Status Updates**: `orderStatus` queue - sends order status changes
-
----
-
-Built with ❤️ for efficient kitchen operations
