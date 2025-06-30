@@ -24,7 +24,7 @@ export function createOrder(items: Item): Order {
 }
 
 export function getOrders(): Order[] | undefined {
-  return orders.length > 0 ? orders : undefined;
+  return orders.length > 0 ? orders : [];
 }
 
 export function updateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed"): string {

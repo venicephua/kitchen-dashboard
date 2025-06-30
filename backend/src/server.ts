@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const RABBITMQ_URL = "amqp://192.168.6.159"; 
+const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://192.168.6.107"; 
 let channel: amqp.Channel;
 
 async function connectToRabbitMQ() {
@@ -29,7 +29,7 @@ async function connectToRabbitMQ() {
   }
 }
 
-app.post("/orders", (req, res) => {
+app.post("/api/orders", (req, res) => {
   const order = req.body.items;
 
   createOrder(order);
@@ -52,7 +52,7 @@ async function startOrderConsumer() {
 
 connectToRabbitMQ().then(startOrderConsumer).catch(console.error);
 
-app.get("/orders", (req, res) => {
+app.get("/api/orders", (req, res) => {
   const orders = getOrders();
   if (orders) {
     res.status(200).json(orders);
@@ -61,7 +61,7 @@ app.get("/orders", (req, res) => {
   }
 });
 
-app.patch("/orders/:id/update", (req, res) => {
+app.patch("/api/orders/:id/update", (req, res) => {
   const orderId = parseInt(req.params.id, 10);
   const orderStatus = req.body.status;
   const statusMsg = updateOrder(orderId, orderStatus);
@@ -69,9 +69,10 @@ app.patch("/orders/:id/update", (req, res) => {
   const statusUpdate = { orderId, status: statusMsg };
   channel.sendToQueue("orderStatus", Buffer.from(JSON.stringify(statusUpdate)));
 
+  console.log(`Order ${orderId} status updated successfully`);
   res.json({ message: `Order ${orderId} status updated successfully` });
 });
 
-app.listen(3001, () => {
-  console.log("Server is running on http://localhost:3001");
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
 });

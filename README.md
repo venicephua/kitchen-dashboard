@@ -36,7 +36,26 @@ A real-time kitchen order management system built with Svelte frontend and Node.
 - **Framework**: Express.js with TypeScript
 - **Message Queue**: RabbitMQ integration with amqplib
 - **Features**: REST API, order management, real-time updates
-- **Port**: 3001
+- **Port**: 3000
+
+## 🚀 Quick Start
+
+### Option 1: Docker (Recommended)
+```bash
+# Clone the repository
+git clone <repository-url>
+cd kitchen-dashboard
+
+# Start all services with Docker Compose
+docker-compose up --build
+
+# Access the applications
+# - Frontend: http://localhost:3001
+# - Backend: http://localhost:3000  
+# - RabbitMQ UI: http://localhost:15672 (guest/guest)
+```
+
+### Option 2: Manual Setup
 
 ### Message Queues
 - **Incoming Orders**: `orders` queue - receives new orders

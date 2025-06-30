@@ -65,7 +65,7 @@
 
   .orders-list {
     display: flex;
-    width: 92%;
+    width: 100%;
     flex-wrap: wrap;
     flex-direction: row;
     align-items: stretch;
@@ -81,7 +81,7 @@
     border-radius: 8px;
     padding: 1rem;
     transition: box-shadow 0.2s;
-    width: 21.95%;
+    width: 22.195%;
   }
 
   button {
