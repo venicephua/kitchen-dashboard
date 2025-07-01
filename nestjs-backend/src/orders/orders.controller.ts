@@ -61,7 +61,7 @@ export class OrdersController {
     // Update order in database
     const order = await this.ordersService.updateStatus(id, updateOrderDto.status);
     
-    // Send status update to RabbitMQ (like your original code)
+    // Send status update to RabbitMQ
     await this.rabbitMQService.sendOrderStatus(id, updateOrderDto.status);
     
     return { 

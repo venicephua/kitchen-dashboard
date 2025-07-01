@@ -11,7 +11,6 @@ export class RabbitMQService implements OnModuleInit {
 
   /**
    * Initialize RabbitMQ connection when the module starts
-   * Replaces connectToRabbitMQ() function
    */
   async onModuleInit() {
     try {
@@ -51,7 +50,6 @@ export class RabbitMQService implements OnModuleInit {
 
   /**
    * Start consuming orders from RabbitMQ
-   * Replaces startOrderConsumer() function
    */
   private async startOrderConsumer() {
     if (!this.channel) {

@@ -46,10 +46,7 @@ export class OrdersService {
     const updatedOrder = await this.ordersRepository.findOne({ where: { id } });
     console.log(`Order ${id} status updated to ${status}`);
     
-    return {
-      ...updatedOrder,
-      isCompleted: updatedOrder.status === 'Completed'
-    } as Order;
+    return updatedOrder;
   }
 
   /**
@@ -61,9 +58,6 @@ export class OrdersService {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
     
-    return {
-      ...order,
-      isCompleted: order.status === 'Completed'
-    } as Order;
+    return order;
   }
 }
