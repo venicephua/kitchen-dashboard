@@ -22,15 +22,11 @@
         <li>
           {order.items.name} x {order.items.quantity}
         </li>
-        {#if order.status === "Pending"}
-          <button onclick={() => handleUpdateOrder(order.id, "Received")}
-            >Process Order</button>
-
-        {:else if order.status === "Received"}
+        {#if order.status === "Received"}
           <button onclick={() => handleUpdateOrder(order.id, "Completed")}
             >Complete Order</button>
           
-        {:else if order.status === "Completed"}
+        {:else}
             <button onclick={() => handleUpdateOrder(order.id, "Received")}
             >Process Order</button>
 

@@ -35,7 +35,7 @@
 
   onMount(() => {
     refreshOrders();
-    interval = setInterval(refreshOrders, 3000); 
+    interval = setInterval(refreshOrders, 2000); 
   });
 
   onDestroy(() => {
