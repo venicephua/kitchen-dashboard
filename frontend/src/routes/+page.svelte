@@ -35,7 +35,7 @@
 
   onMount(() => {
     refreshOrders();
-    interval = setInterval(refreshOrders, 5000); // Poll every 5 seconds instead of 2
+    interval = setInterval(refreshOrders, 3000); 
   });
 
   onDestroy(() => {

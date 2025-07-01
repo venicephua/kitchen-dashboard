@@ -16,42 +16,22 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# List contents to debug
-RUN ls -la /app
-RUN ls -la /app/build || echo "build directory not found"
-
 # Production stage
-FROM nginx:alpine AS runner
+FROM node:18-alpine AS runner
+
+# Set working directory
+WORKDIR /app
 
 # Copy built application from builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package*.json ./
 
-# Copy nginx configuration
-COPY <<EOF /etc/nginx/conf.d/default.conf
-server {
-    listen 3001;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-    
-    # Disable access logging
-    access_log off;
-    
-    # Handle client-side routing
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-    
-    # API proxy to backend
-    location /api/ {
-        proxy_pass http://backend:3000/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-EOF
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Set environment variables
+ENV BACKEND_URL=http://backend:3000
+ENV PORT=3001
 
 # Expose port 3001
 EXPOSE 3001
@@ -60,5 +40,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the SSR server
+CMD ["sh", "-c", "PORT=3001 node build"]
