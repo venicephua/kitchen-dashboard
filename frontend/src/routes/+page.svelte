@@ -4,6 +4,9 @@
   import OrderList from "$lib/OrderList.svelte";
   import { fetchOrders, updateOrder } from "$lib/api";
 
+  // Accept SSR data
+  export let data: { orders: Order[] };
+
   type Item = {
     name: string;
     quantity: number;
@@ -16,7 +19,8 @@
     isCompleted: boolean;
   };
 
-  let orders: Order[] = [];
+  // Initialize with SSR data
+  let orders: Order[] = data.orders || [];
   let interval: ReturnType<typeof setInterval>;
 
   async function refreshOrders() {
@@ -34,7 +38,7 @@
   }
 
   onMount(() => {
-    refreshOrders();
+    // Start polling for real-time updates
     interval = setInterval(refreshOrders, 2000); 
   });
 
