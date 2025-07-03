@@ -27,7 +27,7 @@ export class RabbitMQService implements OnModuleInit {
    */
   private async connectToRabbitMQ() {
     try {
-      const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://192.168.6.86';
+      const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://192.168.6.113';
       this.logger.log(`Connecting to RabbitMQ at ${RABBITMQ_URL}`);
       
       const connection = await amqp.connect(RABBITMQ_URL);

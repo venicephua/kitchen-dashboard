@@ -38,7 +38,7 @@ export class OrdersController {
    * GET /api/orders - Get all orders
    * Replaces: app.get("/api/orders", ...)
    */
-  @Get()
+  @Get(':id?')
   async getOrders() {
     const orders = await this.ordersService.findAll();
     
