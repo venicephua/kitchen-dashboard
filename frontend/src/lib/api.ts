@@ -9,7 +9,7 @@ export async function fetchOrders() {
 }
 
 export async function updateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed") {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/update`, {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',

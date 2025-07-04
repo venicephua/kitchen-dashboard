@@ -6,7 +6,8 @@
   // Accept SSR data
   export let data: { orders: Order[] };
 
-  $: pendingOrders = $ordersStore.filter((o: Order) => !o.isCompleted);
+  $: completedOrders = $ordersStore.filter((o: Order) => o.isCompleted);
+
   let interval: ReturnType<typeof setInterval>;
 
   async function handleUpdateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed") {
@@ -14,11 +15,12 @@
   }
 
   onMount(() => {
-    // Initialize store with SSR data if not already done
-    if ($ordersStore.length === 0 && data.orders?.length > 0) {
+     // Initialize store with SSR data if not already done
+     if ($ordersStore.length === 0 && data.orders?.length > 0) {
       ordersActions.initialize(data.orders);
     }
-    // Start polling for real-time updates
+
+     // Start polling for real-time updates
     interval = setInterval(ordersActions.refresh, 2000);
   });
 
@@ -27,15 +29,14 @@
   });
 </script>
 
-<main>  
+<main>
   <div class="orders-container">
     <div class="order-list-title">
-      <h2>Pending Orders</h2>
-      <span class="svg-spinners--gooey-balls-2"></span>
+      <h2>Completed Orders</h2>
+      <span class="twemoji--cooking"></span>
     </div>
-    
     <OrderList
-      orders={pendingOrders}
+      orders={completedOrders}
       {handleUpdateOrder}
     />
   </div>

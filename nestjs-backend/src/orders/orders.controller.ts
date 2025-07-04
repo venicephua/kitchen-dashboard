@@ -53,7 +53,7 @@ export class OrdersController {
    * PATCH /api/orders/:id/update - Update order status
    * Replaces: app.patch("/api/orders/:id/update", ...)
    */
-  @Patch(':id/update')
+  @Patch(':id')
   async updateOrder(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateOrderDto: UpdateOrderDto
