@@ -12,7 +12,7 @@ export class OrderRetrievalService {
 
   async findAll(): Promise<Order[]> {
     const orders = await this.ordersRepository.find({
-      order: { createdAt: 'DESC' },
+      order: { id: 'ASC' },
     });
 
     return orders.map(order => ({

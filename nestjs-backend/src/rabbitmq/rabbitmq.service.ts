@@ -42,6 +42,7 @@ export class RabbitMQService implements OnModuleInit {
       await this.channel.assertQueue(sendQueue, { durable: false });
       this.logger.log(`Connected to send queue: ${sendQueue}`);
       
+      this.logger.log('RabbitMQ connection established successfully');
     } catch (error) {
       this.logger.error('Failed to connect to RabbitMQ:', error);
       throw error;
@@ -65,7 +66,8 @@ export class RabbitMQService implements OnModuleInit {
         
         try {
           const messageData = JSON.parse(msg.content.toString());
-          
+          this.logger.log('Message data:', messageData);
+
           // Handle different message formats
           let orderData;
           if (messageData.items) {
@@ -82,15 +84,16 @@ export class RabbitMQService implements OnModuleInit {
           }
           
           const savedOrder = await this.orderCreationService.create(orderData);
-          this.logger.log(`Order received from RabbitMQ: ${savedOrder.items.name} x${savedOrder.items.quantity} (ID: ${savedOrder.id})`);
+          this.logger.log(`Order processed: ${savedOrder.items.name} x${savedOrder.items.quantity} (ID: ${savedOrder.id})`);
           
+          // Acknowledge the message
           this.channel.ack(msg);
         } catch (error) {
-          this.logger.error('Error processing order from RabbitMQ:', error.message);
+          this.logger.error('Error processing message:', error.message);
           this.channel.nack(msg, false, false);
         }
       } else {
-        this.logger.log('No message received from RabbitMQ (this should not happen in consume callback)');
+        this.logger.warn('No message received from RabbitMQ');
       }
     }, {
       noAck: false // Ensure we're using manual acknowledgment

@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe, Sse } from '@nestjs/common';
 import { OrderCreationService } from './order-creation.service';
 import { OrderRetrievalService } from './order-retrieval.service';
 import { OrderUpdateService } from './order-update.service';
+import { OrderStreamService } from './order-stream.service'; // Assuming you have an OrderStreamService for SSE
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 // DTOs for request validation
 export class CreateOrderDto {
@@ -22,6 +25,7 @@ export class OrdersController {
     private readonly orderCreationService: OrderCreationService,
     private readonly orderRetrievalService: OrderRetrievalService,
     private readonly orderUpdateService: OrderUpdateService,
+    private readonly orderStreamService: OrderStreamService, // Assuming you have an OrderStreamService for SSE
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
@@ -51,6 +55,17 @@ export class OrdersController {
     }
     
     return orders;
+  }
+
+  /**
+   * GET /api/orders/stream - Server-Sent Events endpoint for real-time updates
+   */
+  @Sse('stream')
+  streamOrders(): Observable<any> {
+    return this.orderStreamService.getOrderStream().pipe(
+      map((data) => ({ data: JSON.stringify(data) })),
+      startWith({ data: JSON.stringify({ type: 'connected' }) })
+    );
   }
 
   /**
