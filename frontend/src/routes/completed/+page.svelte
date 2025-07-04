@@ -8,7 +8,7 @@
 
   $: completedOrders = $ordersStore.filter((o: Order) => o.isCompleted);
 
-  let interval: ReturnType<typeof setInterval>;
+  let eventSource: EventSource | null = null;
 
   async function handleUpdateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed") {
     await ordersActions.updateOrder(orderId, orderStatus);
@@ -20,12 +20,33 @@
       ordersActions.initialize(data.orders);
     }
 
-     // Start polling for real-time updates
-    interval = setInterval(ordersActions.refresh, 2000);
+     // Setup SSE connection
+     eventSource = new EventSource('/api/orders/stream');
+     
+     eventSource.onmessage = (event) => {
+       try {
+         const orderUpdate = JSON.parse(event.data);
+         ordersActions.handleOrderUpdate(orderUpdate);
+       } catch (error) {
+         console.error('Error parsing SSE data:', error);
+       }
+     };
+
+     eventSource.onerror = (error) => {
+       console.error('SSE connection error:', error);
+       // Optionally reconnect after a delay
+       setTimeout(() => {
+         if (eventSource?.readyState === EventSource.CLOSED) {
+           eventSource = new EventSource('/api/orders/stream');
+         }
+       }, 5000);
+     };
   });
 
   onDestroy(() => {
-    clearInterval(interval);
+    if (eventSource) {
+      eventSource.close();
+    }
   });
 </script>
 

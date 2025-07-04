@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe, HttpStatus, Sse } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 // DTOs for request validation
 export class CreateOrderDto {
@@ -47,6 +49,17 @@ export class OrdersController {
     }
     
     return orders;
+  }
+
+  /**
+   * GET /api/orders/stream - Server-Sent Events endpoint for real-time updates
+   */
+  @Sse('stream')
+  streamOrders(): Observable<any> {
+    return this.ordersService.getOrderStream().pipe(
+      map((data) => ({ data: JSON.stringify(data) })),
+      startWith({ data: JSON.stringify({ type: 'connected' }) })
+    );
   }
 
   /**
