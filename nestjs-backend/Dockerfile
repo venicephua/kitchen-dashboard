@@ -9,6 +9,12 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
+# Install TypeScript globally
+RUN npm install -g typescript
+
+# Verify TypeScript installation
+RUN tsc --version
+
 # Copy source code
 COPY . .
 
