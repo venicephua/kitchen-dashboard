@@ -1,5 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe, HttpStatus } from '@nestjs/common';
-import { OrdersService } from './orders.service';
+import { OrderCreationService } from './order-creation.service';
+import { OrderRetrievalService } from './order-retrieval.service';
+import { OrderUpdateService } from './order-update.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 
 // DTOs for request validation
@@ -17,7 +19,9 @@ export class UpdateOrderDto {
 @Controller('api/orders')
 export class OrdersController {
   constructor(
-    private readonly ordersService: OrdersService,
+    private readonly orderCreationService: OrderCreationService,
+    private readonly orderRetrievalService: OrderRetrievalService,
+    private readonly orderUpdateService: OrderUpdateService,
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
@@ -27,7 +31,7 @@ export class OrdersController {
    */
   @Post()
   async createOrder(@Body() createOrderDto: CreateOrderDto) {
-    const order = await this.ordersService.create(createOrderDto);
+    const order = await this.orderCreationService.create(createOrderDto);
     return { 
       message: 'Order created successfully', 
       order 
@@ -40,7 +44,7 @@ export class OrdersController {
    */
   @Get()
   async getOrders() {
-    const orders = await this.ordersService.findAll();
+    const orders = await this.orderRetrievalService.findAll();
     
     if (orders.length === 0) {
       return [];
@@ -58,10 +62,7 @@ export class OrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateOrderDto: UpdateOrderDto
   ) {
-    // Update order in database
-    const order = await this.ordersService.updateStatus(id, updateOrderDto.status);
-    
-    // Send status update to RabbitMQ
+    const order = await this.orderUpdateService.updateStatus(id, updateOrderDto.status);
     await this.rabbitMQService.sendOrderStatus(id, updateOrderDto.status);
     
     return { 

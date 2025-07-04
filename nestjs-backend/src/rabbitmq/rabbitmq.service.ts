@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { OrdersService } from '../orders/orders.service';
+import { OrderCreationService } from '../orders/order-creation.service';
 import * as amqp from 'amqplib';
 
 @Injectable()
@@ -7,7 +7,7 @@ export class RabbitMQService implements OnModuleInit {
   private readonly logger = new Logger(RabbitMQService.name);
   private channel: amqp.Channel;
   
-  constructor(private ordersService: OrdersService) {}
+  constructor(private orderCreationService: OrderCreationService) {}
 
   /**
    * Initialize RabbitMQ connection when the module starts
@@ -81,7 +81,7 @@ export class RabbitMQService implements OnModuleInit {
             throw new Error(`Invalid message format`);
           }
           
-          const savedOrder = await this.ordersService.create(orderData);
+          const savedOrder = await this.orderCreationService.create(orderData);
           this.logger.log(`Order received from RabbitMQ: ${savedOrder.items.name} x${savedOrder.items.quantity} (ID: ${savedOrder.id})`);
           
           this.channel.ack(msg);
