@@ -29,14 +29,17 @@ export class OrdersService {
     });
 
     const savedOrder = await this.ordersRepository.save(order);
+
+    // Broadcast the order creation event
     this.broadcastOrderUpdate("order_created", savedOrder);
+    
     console.log("Order created in database:", savedOrder);
     return savedOrder;
   }
 
   async findAll(): Promise<Order[]> {
     const orders = await this.ordersRepository.find({
-      order: { createdAt: "DESC" },
+      order: { id: "ASC" },
     });
 
     return orders.map((order) => ({
@@ -62,6 +65,7 @@ export class OrdersService {
     const updatedOrder = await this.ordersRepository.findOne({ where: { id } });
     console.log(`Order ${id} status updated to ${status}`);
     
+    // Broadcast the order update event
     this.broadcastOrderUpdate('order_updated', updatedOrder);
 
     return updatedOrder;

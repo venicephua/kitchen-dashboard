@@ -6,6 +6,7 @@
   // Accept SSR data
   export let data: { orders: Order[] };
 
+  // Access the store to get pending orders - automatically updates when store changes
   $: pendingOrders = $ordersStore.filter((o: Order) => !o.isCompleted);
   let eventSource: EventSource | null = null;
 
