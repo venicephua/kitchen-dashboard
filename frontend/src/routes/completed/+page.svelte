@@ -1,47 +1,57 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import OrderList from "$lib/OrderList.svelte";
-  import { ordersStore, ordersActions, type Order } from '$lib/stores/orders';
+  import {
+    visibleOrdersStore,
+    ordersActions,
+    type Order,
+  } from "$lib/stores/orders";
 
   // Accept SSR data
   export let data: { orders: Order[] };
 
-  // Access the store to get completed orders - automatically updates when store changes
-  $: completedOrders = $ordersStore.filter((o: Order) => o.isCompleted);
+  $: completedOrders = $visibleOrdersStore.filter((o: Order) => o.isCompleted);
 
   let eventSource: EventSource | null = null;
 
-  async function handleUpdateOrder(orderId: number, orderStatus: "Pending" | "Received" | "Completed") {
+  async function handleUpdateOrder(
+    orderId: number,
+    orderStatus: "Pending" | "Received" | "Completed"
+  ) {
     await ordersActions.updateOrder(orderId, orderStatus);
   }
 
+  function handleHideOrder(orderId: number) {
+    if (confirm("Delete order from view?")) {
+      ordersActions.hideOrder(orderId);
+    }
+  }
+
   onMount(() => {
-     // Initialize store with SSR data if not already done
-     if ($ordersStore.length === 0 && data.orders?.length > 0) {
+    if ($visibleOrdersStore.length === 0 && data.orders?.length > 0) {
       ordersActions.initialize(data.orders);
     }
 
-     // Setup SSE connection
-     eventSource = new EventSource('/api/orders/stream');
-     
-     eventSource.onmessage = (event) => {
-       try {
-         const orderUpdate = JSON.parse(event.data);
-         ordersActions.handleOrderUpdate(orderUpdate);
-       } catch (error) {
-         console.error('Error parsing SSE data:', error);
-       }
-     };
+    // Setup SSE connection
+    eventSource = new EventSource("/api/orders/stream");
 
-     eventSource.onerror = (error) => {
-       console.error('SSE connection error:', error);
-       // Optionally reconnect after a delay
-       setTimeout(() => {
-         if (eventSource?.readyState === EventSource.CLOSED) {
-           eventSource = new EventSource('/api/orders/stream');
-         }
-       }, 5000);
-     };
+    eventSource.onmessage = (event) => {
+      try {
+        const orderUpdate = JSON.parse(event.data);
+        ordersActions.handleOrderUpdate(orderUpdate);
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("SSE connection error:", error);
+      setTimeout(() => {
+        if (eventSource?.readyState === EventSource.CLOSED) {
+          eventSource = new EventSource("/api/orders/stream");
+        }
+      }, 5000);
+    };
   });
 
   onDestroy(() => {
@@ -57,9 +67,6 @@
       <h2>Completed Orders</h2>
       <span class="twemoji--cooking"></span>
     </div>
-    <OrderList
-      orders={completedOrders}
-      {handleUpdateOrder}
-    />
+    <OrderList orders={completedOrders} {handleUpdateOrder} {handleHideOrder} />
   </div>
 </main>

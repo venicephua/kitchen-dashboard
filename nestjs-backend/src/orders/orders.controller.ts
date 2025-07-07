@@ -3,6 +3,7 @@ import { OrderCreationService } from './order-creation.service';
 import { OrderRetrievalService } from './order-retrieval.service';
 import { OrderUpdateService } from './order-update.service';
 import { OrderStreamService } from './order-stream.service'; 
+import { OrderVisibilityService } from './order-visibility.service'; 
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -25,7 +26,8 @@ export class OrdersController {
     private readonly orderCreationService: OrderCreationService,
     private readonly orderRetrievalService: OrderRetrievalService,
     private readonly orderUpdateService: OrderUpdateService,
-    private readonly orderStreamService: OrderStreamService, // Assuming you have an OrderStreamService for SSE
+    private readonly orderStreamService: OrderStreamService, 
+    private readonly orderVisibilityService: OrderVisibilityService,
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
@@ -85,4 +87,13 @@ export class OrdersController {
       order 
     };
   }
+
+@Patch(':id/hide')
+async hideOrder(@Param('id', ParseIntPipe) id: number) {
+  const order = await this.orderVisibilityService.hideOrder(id);
+  return { 
+    message: `Order ${id} hidden successfully`,
+    order 
+  };
+}
 }
