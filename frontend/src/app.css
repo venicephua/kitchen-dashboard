@@ -102,6 +102,7 @@ li {
 }
 
 .order-card {
+  position: relative;
   color: white;
   opacity: 0.85;
   display: inline-grid;
@@ -133,6 +134,27 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.hide-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.hide-btn:hover {
+  background-color: #ff5252;
+  transform: scale(1.1);
 }
 
 nav {
