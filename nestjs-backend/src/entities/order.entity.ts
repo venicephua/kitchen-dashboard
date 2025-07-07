@@ -29,4 +29,7 @@ export class Order {
   get isCompleted(): boolean {
     return this.status === 'Completed';
   }
+
+  @Column({ default: true })
+  isVisible: boolean;
 }

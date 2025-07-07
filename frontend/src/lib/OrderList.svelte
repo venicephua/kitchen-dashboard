@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { flip } from 'svelte/animate'
-  import { send, receive } from './transition.js';
+  import { flip } from "svelte/animate";
+  import { send, receive } from "./transition.js";
 
-  let { orders, handleUpdateOrder } = $props();
+  let { orders, handleUpdateOrder, handleHideOrder = null } = $props();
 </script>
 
 {#if orders.length > 0}
@@ -10,12 +10,24 @@
     {#each orders as order (order.id)}
       <div
         class="order-card"
-        style:background-color={order.status === 'Pending' ? '#605d66' : 
-        order.status === 'Received' ? '#e676bb' : '#278f5e'}
+        style:background-color={order.status === "Pending"
+          ? "#605d66"
+          : order.status === "Received"
+            ? "#e676bb"
+            : "#278f5e"}
         in:receive={{ key: order.id }}
-			  out:send={{ key: order.id }}
+        out:send={{ key: order.id }}
         animate:flip={{ duration: 200 }}
       >
+        {#if handleHideOrder}
+          <button
+            class="hide-btn"
+            onclick={() => handleHideOrder(order.id)}
+            title="Hide order from view"
+          >
+            ✕
+          </button>
+        {/if}
         <h3>Order ID: {order.id}</h3>
         <h3>Status: {order.status}</h3>
         <h3>Items:</h3>
@@ -24,12 +36,12 @@
         </li>
         {#if order.status === "Received"}
           <button onclick={() => handleUpdateOrder(order.id, "Completed")}
-            >Complete Order</button>
-          
+            >Complete Order</button
+          >
         {:else}
-            <button onclick={() => handleUpdateOrder(order.id, "Received")}
-            >Process Order</button>
-
+          <button onclick={() => handleUpdateOrder(order.id, "Received")}
+            >Process Order</button
+          >
         {/if}
       </div>
     {/each}
@@ -37,3 +49,30 @@
 {:else}
   <p>No orders available.</p>
 {/if}
+
+<style>
+  .hide-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+
+  .hide-btn:hover {
+    background-color: #ff5252;
+    transform: scale(1.1);
+  }
+
+  .order-card {
+    position: relative;
+  }
+</style>

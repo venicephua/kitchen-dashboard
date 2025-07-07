@@ -12,6 +12,7 @@ export class OrderRetrievalService {
 
   async findAll(): Promise<Order[]> {
     const orders = await this.ordersRepository.find({
+      where: { isVisible: true }, 
       order: { id: 'ASC' },
     });
 
