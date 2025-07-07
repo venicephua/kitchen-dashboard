@@ -94,13 +94,11 @@ li {
 }
 
 .orders-list {
-  display: flex;
+  display: grid;
   width: 100%;
-  flex-wrap: wrap;
-  flex-direction: row;
-  align-items: stretch;
-  justify-content: start;
-  gap: 10px;
+  justify-content: center;
+  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .order-card {
@@ -111,7 +109,7 @@ li {
   border-radius: 8px;
   padding: 1rem;
   transition: box-shadow 0.2s;
-  width: 22.195%;
+  width: 90%;
 }
 
 button {
