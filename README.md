@@ -6,14 +6,15 @@ View Part 1 [here](https://github.com/shanicetanhui/ordering-app).
 
 ## 🚀 Features
 
-- **Real-time Order Management**: View and manage kitchen orders with live updates
+- **Real-time Order Management**: View and manage kitchen orders with live updates via Server-Sent Events (SSE)
 - **Order Status Tracking**: Track orders through Pending → Received → Completed states
 - **RabbitMQ Integration**: Receive new orders and send status updates via message queues
 - **Persistent Storage**: Orders stored in PostgreSQL database with full data persistence
 - **Server-Side Rendering**: Fast initial page loads with SvelteKit SSR
 - **Responsive UI**: Modern, clean interface with smooth animations
-- **Auto-refresh**: Orders update automatically every 2 seconds
+- **Server-Sent Events**: Real-time updates without polling - instant order notifications
 - **Order Processing**: Process and complete orders with one-click buttons
+- **Order Visibility**: Hide completed orders from view while keeping them in database
 - **Type Safety**: Full TypeScript implementation across frontend and backend
 - **Docker Support**: Complete containerized deployment with Docker Compose
 
@@ -45,17 +46,19 @@ View Part 1 [here](https://github.com/shanicetanhui/ordering-app).
 
 ### Frontend (SvelteKit + TypeScript)
 - **Framework**: SvelteKit with Server-Side Rendering (SSR)
-- **Features**: Auto-polling, smooth transitions, responsive layout, optimistic UI updates
+- **Features**: Server-Sent Events (SSE), smooth transitions, responsive layout, real-time updates
 - **Port**: 3001
 - **API Integration**: Direct HTTP calls to NestJS backend with proxy support
+- **Real-time**: EventSource API for instant order updates via SSE
 
 ### Backend (NestJS + TypeScript)
 - **Framework**: NestJS with TypeScript decorators and dependency injection
 - **Database**: PostgreSQL with TypeORM for entity management
 - **Message Queue**: RabbitMQ integration with amqplib
-- **Features**: REST API, order management, real-time updates, data persistence
+- **Features**: REST API, Server-Sent Events, order management, real-time updates, data persistence
 - **Architecture**: Modular design with controllers, services, entities, and modules
 - **Port**: 3000
+- **SSE**: RxJS-based event streaming for real-time client updates
 
 ### Database (PostgreSQL)
 - **Engine**: PostgreSQL 15 with Alpine Linux
@@ -124,6 +127,22 @@ docker exec kitchen-postgres psql -U kitchen_user -d kitchen_db -c "DELETE FROM 
 docker exec kitchen-postgres pg_dump -U kitchen_user kitchen_db > backup.sql
 ```
 
+### pgAdmin Web Interface
+
+pgAdmin is included for easy database management through a web interface:
+
+1. **Access pgAdmin**: Navigate to http://localhost:5050
+2. **Login**: Use `admin@kitchen.com` / `admin123`
+3. **Add Server**: Right-click "Servers" → "Register" → "Server"
+4. **Server Configuration**:
+   - **Name**: Kitchen Database
+   - **Connection Tab**:
+     - **Host**: `postgres` (Docker service name)
+     - **Port**: `5432`
+     - **Database**: `kitchen_db`
+     - **Username**: `kitchen_user`
+     - **Password**: `kitchen_pass`
+
 ### Database Schema
 ```sql
 -- Orders table structure
@@ -131,6 +150,7 @@ CREATE TABLE orders (
   id SERIAL PRIMARY KEY,
   items JSONB NOT NULL,  -- {"name": "Coffee", "quantity": 2}
   status orders_status_enum DEFAULT 'Pending',  -- Pending/Received/Completed
+  "isVisible" BOOLEAN DEFAULT true,  -- Controls order visibility
   "createdAt" TIMESTAMP DEFAULT now(),
   "updatedAt" TIMESTAMP DEFAULT now()
 );
@@ -187,6 +207,7 @@ Backend API:      http://localhost:3000
 Database:         localhost:5432 (kitchen_user/kitchen_pass)
 RabbitMQ AMQP:    localhost:5672
 RabbitMQ Web UI:  http://localhost:15672 (guest/guest)
+pgAdmin:          http://localhost:5050 (admin@kitchen.com/admin123)
 ```
 
 ## 📡 API Endpoints
@@ -195,6 +216,10 @@ RabbitMQ Web UI:  http://localhost:15672 (guest/guest)
 ```bash
 # Get all orders
 GET http://localhost:3000/api/orders
+
+# Server-Sent Events stream for real-time updates
+GET http://localhost:3000/api/orders/stream
+Accept: text/event-stream
 
 # Create new order
 POST http://localhost:3000/api/orders
@@ -207,11 +232,39 @@ Content-Type: application/json
 }
 
 # Update order status
-PATCH http://localhost:3000/api/orders/123/update
+PATCH http://localhost:3000/api/orders/123
 Content-Type: application/json
 {
   "status": "Completed"
 }
+
+# Hide order from view
+PATCH http://localhost:3000/api/orders/123/hide
+```
+
+## 🔄 Real-time Updates with Server-Sent Events
+
+The application uses Server-Sent Events (SSE) for real-time order updates, replacing traditional polling for better performance and instant notifications.
+
+### How SSE Works
+
+1. **Frontend connects**: `EventSource` connects to `/api/orders/stream`
+2. **Backend streams**: NestJS `@Sse` decorator with RxJS Observable
+3. **Real-time updates**: Order changes broadcast instantly to all connected clients
+
+### SSE Event Types
+```json
+// Connection established
+{ "type": "connected" }
+
+// New order created
+{ "type": "order_created", "order": { "id": 1, "items": {...}, "status": "Pending" } }
+
+// Order status updated
+{ "type": "order_updated", "order": { "id": 1, "items": {...}, "status": "Completed" } }
+
+// Order hidden from view
+{ "type": "order_hidden", "order": { "id": 1, ... } }
 ```
 
 ## 🛠️ Development
@@ -220,13 +273,20 @@ Content-Type: application/json
 ```
 kitchen-dashboard/
 ├── docker-compose.yml          # Multi-container orchestration
-├── frontend/                   # SvelteKit application
+├── .env.example               # Environment variables template
+├── .gitignore                 # Git ignore rules (excludes .env)
+├── frontend/                  # SvelteKit application
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── api.ts         # API client functions
-│   │   │   └── OrderList.svelte
+│   │   │   ├── OrderList.svelte
+│   │   │   └── stores/
+│   │   │       └── orders.ts  # Svelte stores for state management
 │   │   ├── routes/
-│   │   │   └── +page.svelte   # Main dashboard
+│   │   │   ├── +page.svelte   # Main dashboard (pending orders)
+│   │   │   ├── +layout.server.ts # SSR data loading
+│   │   │   └── completed/
+│   │   │       └── +page.svelte # Completed orders page
 │   │   └── hooks.server.ts    # SSR API proxy
 │   └── Dockerfile
 └── nestjs-backend/            # NestJS application
@@ -234,8 +294,12 @@ kitchen-dashboard/
     │   ├── entities/
     │   │   └── order.entity.ts    # Database models
     │   ├── orders/
-    │   │   ├── orders.controller.ts # API endpoints
-    │   │   ├── orders.service.ts    # Business logic
+    │   │   ├── orders.controller.ts # API endpoints + SSE stream
+    │   │   ├── order-creation.service.ts   # Order creation logic
+    │   │   ├── order-retrieval.service.ts  # Order fetching logic
+    │   │   ├── order-update.service.ts     # Order status updates
+    │   │   ├── order-stream.service.ts     # SSE event streaming
+    │   │   ├── order-visibility.service.ts # Order hiding logic
     │   │   └── orders.module.ts     # NestJS module
     │   ├── rabbitmq/
     │   │   └── rabbitmq.service.ts  # Message queue
@@ -246,13 +310,22 @@ kitchen-dashboard/
 
 ### Environment Variables
 ```bash
-# Backend (.env)
-DB_HOST=postgres
+# Create .env file from template
+cp .env.example .env
+
+# Edit .env with your configuration
+# Note: .env is gitignored for security
+
+# Backend environment variables
+DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=kitchen_user
 DB_PASSWORD=kitchen_pass
 DB_NAME=kitchen_db
-RABBITMQ_URL=amqp://rabbitmq:5672
+RABBITMQ_URL=amqp://localhost:5672
+NODE_ENV=development
+BACKEND_PORT=3000
+FRONTEND_PORT=3001
 ```
 
 ## 🧪 Testing
@@ -263,6 +336,17 @@ RABBITMQ_URL=amqp://rabbitmq:5672
 curl -X POST http://localhost:3000/api/orders \
   -H "Content-Type: application/json" \
   -d '{"items": {"name": "Test Coffee", "quantity": 1}}'
+
+# Test order status update
+curl -X PATCH http://localhost:3000/api/orders/1 \
+  -H "Content-Type: application/json" \
+  -d '{"status": "Completed"}'
+
+# Test order hiding
+curl -X PATCH http://localhost:3000/api/orders/1/hide
+
+# Test SSE stream (in separate terminal)
+curl -N -H "Accept: text/event-stream" http://localhost:3000/api/orders/stream
 
 # Test via RabbitMQ (send message to orders queue)
 # Use RabbitMQ Management UI at http://localhost:15672
@@ -275,6 +359,19 @@ docker exec kitchen-postgres psql -U kitchen_user -d kitchen_db -c "SELECT COUNT
 
 # View recent orders
 docker exec kitchen-postgres psql -U kitchen_user -d kitchen_db -c "SELECT * FROM orders ORDER BY \"createdAt\" DESC LIMIT 5;"
+
+# Check order visibility
+docker exec kitchen-postgres psql -U kitchen_user -d kitchen_db -c "SELECT id, items->>'name' as name, status, \"isVisible\" FROM orders;"
+```
+
+### pgAdmin Testing
+```bash
+# Access pgAdmin for visual database management
+# 1. Open http://localhost:5050
+# 2. Login with admin@kitchen.com / admin123
+# 3. Connect to Kitchen Database server
+# 4. Navigate to: Servers → Kitchen Database → Databases → kitchen_db → Schemas → public → Tables → orders
+# 5. Right-click orders table → "View/Edit Data" → "All Rows"
 ```
 
 ## 🔧 Troubleshooting
@@ -288,6 +385,9 @@ docker ps | grep postgres
 
 # View database logs
 docker logs kitchen-postgres
+
+# Check pgAdmin logs
+docker logs kitchen-pgadmin
 
 # Reset database (nuclear option)
 docker-compose down -v && docker-compose up -d
@@ -317,7 +417,7 @@ docker logs kitchen-frontend
 ### Port Conflicts
 ```bash
 # Check what's using ports
-netstat -tulpn | grep -E "(3000|3001|5432|5672|15672)"
+netstat -tulpn | grep -E "(3000|3001|5432|5672|15672|5050)"
 
 # Stop conflicting services
 docker-compose down
@@ -347,21 +447,24 @@ environment:
 ## 📋 Features
 
 ### ✅ Implemented
-- [x] Real-time order management
+- [x] Real-time order management with Server-Sent Events (SSE)
 - [x] PostgreSQL data persistence  
 - [x] RabbitMQ message processing
 - [x] Server-side rendering (SSR)
 - [x] Docker containerization
 - [x] TypeScript throughout
-- [x] Optimistic UI updates
-- [x] Auto-refresh functionality
+- [x] Real-time updates without polling
+- [x] Order visibility management (hide/show)
+- [x] Separated page views (pending vs completed orders)
+- [x] Environment variable configuration with `.env.example`
+- [x] Modular NestJS architecture with service separation
+- [x] Svelte stores for state management
 
 ### 🔄 Future Enhancements
 - [ ] User authentication
 - [ ] Order history and analytics
 - [ ] Push notifications
 - [ ] Multi-restaurant support
-- [ ] Real-time WebSocket updates
 - [ ] Order filtering and search
 - [ ] Performance monitoring
 - [ ] Automated testing suite
